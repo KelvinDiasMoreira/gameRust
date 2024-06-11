@@ -25,19 +25,36 @@ struct Point2d {
     position_y: i32,
     color: Color,
     // initial_position: i32,
-    is_increase: bool,
+    is_increase_x: bool,
+    is_increase_y: bool,
 }
 
 impl Point2d {
     fn movement(&mut self) {
-        if self.is_increase {
-            self.position_x += 10;
+        if self.is_increase_x {
+            self.position_x += SPEED_POINT_X;
+            self.position_y += SPEED_POINT_Y;
         } else {
-            self.position_x -= 10;
+            self.position_x -= SPEED_POINT_X;
+        }
+        if self.position_y < SCREEN_HEIGHT as i32 && self.is_increase_y {
+            if self.position_y == (SCREEN_HEIGHT - SPEED_POINT_Y as u32) as i32 {
+                self.is_increase_y = false;
+            } else {
+                self.position_y += SPEED_POINT_Y;
+            }
+        } else {
+            if self.position_y < (0 + SPEED_POINT_Y) && !self.is_increase_y {
+                self.is_increase_y = true;
+            } else {
+                self.position_y -= SPEED_POINT_Y;
+            }
         }
     }
 }
-
+const SPEED_POINT_Y: i32 = 10;
+const SPEED_POINT_X: i32 = 10;
+const SPEED_RECTANGLES: i32 = 10;
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 
@@ -76,7 +93,7 @@ fn main() {
                     Some(code) => {
                         if code == keyboard::Keycode::W {
                             if first_rectangle.position_y > 0 {
-                                first_rectangle.position_y -= 10;
+                                first_rectangle.position_y -= SPEED_RECTANGLES;
                             }
                         }
                         if code == keyboard::Keycode::S {
@@ -86,7 +103,7 @@ fn main() {
                                 continue;
                             }
 
-                            first_rectangle.position_y += 10;
+                            first_rectangle.position_y += SPEED_RECTANGLES;
                         }
                         // if code == keyboard::Keycode::Up {
                         //     if second_rectangle.position_y > 0 {
@@ -132,7 +149,6 @@ fn update(
         player1_rectangle.width,
         player1_rectangle.height,
     ));
-    update_position_point(point, player1_rectangle, player2_rectangle);
 
     canvas.set_draw_color(player2_rectangle.color);
     let _ = canvas.draw_rect(Rect::new(
@@ -141,6 +157,8 @@ fn update(
         player2_rectangle.width,
         player2_rectangle.height,
     ));
+
+    update_position_point(point, player1_rectangle, player2_rectangle);
 
     canvas.present();
 }
@@ -163,19 +181,19 @@ fn check_colision(
     player1_rectangle: &Rectangle2d,
     player2_rectangle: &Rectangle2d,
 ) {
-    // println!("point: {:?}", point);
+    println!("point: {:?}", point);
     // println!("rectangle: {:?}", player1_rectangle);
     if point.position_x == player1_rectangle.position_x + player1_rectangle.width as i32
         && point.position_y >= player1_rectangle.position_y
         && point.position_y <= player1_rectangle.position_y + player1_rectangle.height as i32
     {
-        point.is_increase = true;
+        point.is_increase_x = true;
     }
     if point.position_x == player2_rectangle.position_x
         && point.position_y >= player2_rectangle.position_y
         && point.position_y <= player2_rectangle.position_y + player2_rectangle.height as i32
     {
-        point.is_increase = false;
+        point.is_increase_x = false;
     }
 }
 
@@ -195,6 +213,7 @@ fn build_point(position_x: i32, position_y: i32, color: Color, _initial_position
         position_y,
         color,
         // initial_position,
-        is_increase: false,
+        is_increase_x: false,
+        is_increase_y: true,
     }
 }
