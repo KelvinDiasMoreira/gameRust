@@ -33,7 +33,6 @@ impl Point2d {
     fn movement(&mut self) {
         if self.is_increase_x {
             self.position_x += SPEED_POINT_X;
-            self.position_y += SPEED_POINT_Y;
         } else {
             self.position_x -= SPEED_POINT_X;
         }
