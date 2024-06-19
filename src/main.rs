@@ -49,23 +49,23 @@ impl Rectangle2d {
 }
 
 impl Point2d {
-    fn movement(&mut self, speed_point_x: f64, speed_point_y: f64) {
+    fn movement(&mut self) {
         if self.is_increase_x {
-            self.position_x += speed_point_x;
+            self.position_x += self.speed_pos_x;
         } else {
-            self.position_x -= speed_point_x;
+            self.position_x -= self.speed_pos_x;
         }
         if self.position_y < SCREEN_HEIGHT as f64 && self.is_increase_y == true {
-            if self.position_y >= (SCREEN_HEIGHT - speed_point_y as f64) as f64 {
+            if self.position_y >= (SCREEN_HEIGHT as f64 - self.speed_pos_x as f64) as f64 {
                 self.is_increase_y = false;
             } else {
-                self.position_y += speed_point_y;
+                self.position_y += self.speed_pos_y;
             }
         } else {
-            if self.position_y <= (0.0 + speed_point_y) && !self.is_increase_y {
+            if self.position_y <= (0.0 + self.speed_pos_y) && !self.is_increase_y {
                 self.is_increase_y = true;
             } else {
-                self.position_y -= speed_point_y;
+                self.position_y -= self.speed_pos_y;
             }
         }
     }
@@ -75,14 +75,10 @@ impl Point2d {
             && self.position_y
                 <= player1_rectangle.position_y as f64 + player1_rectangle.height as f64
         {
-            // let product = self.speed_pos_x * 1.0 + self.speed_pos_y * 0.0;
-            // let vx = self.speed_pos_x - 2.0 * (product * 1.0);
-            // let vy = self.speed_pos_y - 2.0 * (product * 0.0);
-
             self.is_increase_x = true;
         }
         if self.position_x == player2_rectangle.position_x as f64 - player2_rectangle.width as f64
-            && self.position_y >= player2_rectangle.position_y.into()
+            && self.position_y >= player2_rectangle.position_y as f64
             && self.position_y
                 <= player2_rectangle.position_y as f64 + player2_rectangle.height as f64
         {
@@ -92,18 +88,16 @@ impl Point2d {
 }
 
 const SPEED_RECTANGLES: i32 = 10;
-const SCREEN_WIDTH: f64 = 800.0;
-const SCREEN_HEIGHT: f64 = 600.0;
+const SCREEN_WIDTH: u32 = 800;
+const SCREEN_HEIGHT: u32 = 600;
 
 fn main() {
-    let speed_point_y: i32 = rand::thread_rng().gen_range(1..15);
-    let speed_point_x: i32 = 10;
     let mut game_is_running = true;
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("Impossivel", SCREEN_WIDTH as u32, SCREEN_HEIGHT as u32)
+        .window("Impossivel", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build()
         .expect("failed to open");
@@ -125,7 +119,7 @@ fn main() {
         Color::RGB(255, 255, 255),
         SCREEN_WIDTH as f64 / 2.0 as f64,
         10.0,
-        rand::thread_rng().gen_range(1.0..15.0),
+        0.0, //rand::thread_rng().gen_range(1.0..15.0)
     );
     while game_is_running {
         for event in event_pump.poll_iter() {
@@ -148,8 +142,6 @@ fn main() {
             &first_rectangle,
             &mut point,
             &mut second_rectangle,
-            speed_point_x,
-            speed_point_y,
         );
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
@@ -177,8 +169,6 @@ fn update(
     player1_rectangle: &Rectangle2d,
     point: &mut Point2d,
     player2_rectangle: &mut Rectangle2d,
-    speed_point_x: i32,
-    speed_point_y: i32,
 ) {
     canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
@@ -202,13 +192,7 @@ fn update(
         player2_rectangle.height,
     ));
 
-    update_position_point(
-        point,
-        player1_rectangle,
-        player2_rectangle,
-        speed_point_x as f64,
-        speed_point_y as f64,
-    );
+    update_position_point(point, player1_rectangle, player2_rectangle);
     if player2_rectangle.is_bot {
         player2_rectangle.movement_bot(point);
     }
@@ -219,10 +203,8 @@ fn update_position_point(
     point: &mut Point2d,
     player1_rectangle: &Rectangle2d,
     player2_rectangle: &Rectangle2d,
-    speed_point_x: f64,
-    speed_point_y: f64,
 ) {
-    point.movement(speed_point_x, speed_point_y);
+    point.movement();
     point.check_colision(player1_rectangle, player2_rectangle);
     if point.position_x == 0.0 {
         point.position_x = point.initial_position
