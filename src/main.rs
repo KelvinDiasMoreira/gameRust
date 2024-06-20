@@ -2,6 +2,7 @@ use rand::Rng;
 use sdl2::{
     event::Event,
     keyboard,
+    libc::rand,
     pixels::Color,
     rect::{Point, Rect},
     render::Canvas,
@@ -75,6 +76,32 @@ impl Point2d {
             && self.position_y
                 <= player1_rectangle.position_y as f64 + player1_rectangle.height as f64
         {
+            let angle_in_radians = unsafe { SDL_atan2(self.speed_pos_y, self.speed_pos_x) };
+            let angle_in_degrees = angle_in_radians * (180.0 / PI) as f64;
+            let random_angle = angle_in_degrees + rand::thread_rng().gen_range(-10.5..10.5);
+            let y_top_rectangle = player1_rectangle.position_y;
+            let y_mid_rectangle =
+                player1_rectangle.position_y + (player1_rectangle.height / 2) as i32;
+            let y_bottom_rectangle = y_top_rectangle + player1_rectangle.height as i32;
+            let position_hit_in_rectangle = self.position_y - y_top_rectangle as f64;
+            if self.position_y <= (y_mid_rectangle + 10) as f64
+                && self.position_y >= (y_mid_rectangle - 10) as f64
+            {
+                self.speed_pos_y = 0.0
+            }
+            // println!("y_top_rectangle: {}", y_top_rectangle);
+            // println!("test1: {}", y_top_rectangle + 20);
+
+            // println!("mid: {}", y_mid_rectangle);
+            // println!("resut: {}", y_top_rectangle - y_mid_rectangle);
+            if self.position_y == (y_mid_rectangle + 20 as i32) as f64
+                && self.position_y >= y_top_rectangle as f64
+            {
+                println!("top");
+            }
+
+            //30° × 3,14159 / 180°
+
             self.is_increase_x = true;
         }
         if self.position_x == player2_rectangle.position_x as f64 - player2_rectangle.width as f64
@@ -175,6 +202,13 @@ fn update(
 
     canvas.set_draw_color(point.color);
     let _ = canvas.draw_point(Point::new(point.position_x as i32, point.position_y as i32));
+    canvas.set_draw_color(Color::RGB(255, 0, 0));
+    let _ = canvas.draw_point(Point::new(
+        15 as i32,
+        player1_rectangle.position_y + (player1_rectangle.height / 2 as u32) as i32,
+    ));
+    canvas.set_draw_color(Color::RGB(255, 0, 0));
+    let _ = canvas.draw_point(Point::new(15 as i32, player1_rectangle.position_y + 20));
 
     canvas.set_draw_color(player1_rectangle.color);
     let _ = canvas.fill_rect(Rect::new(
