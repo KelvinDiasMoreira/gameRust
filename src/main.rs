@@ -2,15 +2,13 @@ use rand::Rng;
 use sdl2::{
     event::Event,
     keyboard,
-    libc::rand,
     pixels::Color,
     rect::{Point, Rect},
     render::Canvas,
-    sys::SDL_atan2,
     video::Window,
 };
 
-use std::{f32::consts::PI, time::Duration};
+use std::time::Duration;
 
 extern crate sdl2;
 
@@ -80,27 +78,20 @@ impl Point2d {
             let y_mid_rectangle =
                 player1_rectangle.position_y + (player1_rectangle.height / 2) as i32;
             let y_bottom_rectangle = y_top_rectangle + player1_rectangle.height as i32;
-            if self.position_y <= (y_mid_rectangle + 10) as f64
-                && self.position_y >= (y_mid_rectangle - 10) as f64
-            {
+            if self.position_y <= (y_mid_rectangle) as f64 {
                 self.speed_pos_y = 0.0
             }
 
-            if self.position_y <= (player1_rectangle.position_y + 20 as i32) as f64
-                && self.position_y >= (player1_rectangle.position_y - 20 as i32) as f64 as f64
+            if self.position_y <= (y_top_rectangle + 40 as i32) as f64
+                && self.position_y >= (y_top_rectangle - 40 as i32) as f64 as f64
             {
-                println!("top");
-                self.speed_pos_y = 10.0;
+                self.speed_pos_y = rand::thread_rng().gen_range(0.0..10.0);
             }
-            println!("bottom: {}", y_bottom_rectangle);
-            if self.position_y >= (y_bottom_rectangle - 20 as i32) as f64
-                && self.position_y <= (y_bottom_rectangle + 20 as i32) as f64
+            if self.position_y >= (y_bottom_rectangle - 40 as i32) as f64
+                && self.position_y <= (y_bottom_rectangle + 40 as i32) as f64
             {
-                self.speed_pos_y = 4.0;
-                println!("bottom");
+                self.speed_pos_y = rand::thread_rng().gen_range(0.0..10.0);
             }
-
-            //30° × 3,14159 / 180°
 
             self.is_increase_x = true;
         }
@@ -109,6 +100,26 @@ impl Point2d {
             && self.position_y
                 <= player2_rectangle.position_y as f64 + player2_rectangle.height as f64
         {
+            let y_top_rectangle = player2_rectangle.position_y;
+            let y_mid_rectangle =
+                player2_rectangle.position_y + (player2_rectangle.height / 2) as i32;
+            let y_bottom_rectangle = y_top_rectangle + player2_rectangle.height as i32;
+            if self.position_y <= (y_mid_rectangle) as f64 && !player2_rectangle.is_bot {
+                self.speed_pos_y = 0.0
+            }
+
+            if self.position_y <= (y_top_rectangle + 40 as i32) as f64
+                && self.position_y >= (y_top_rectangle - 40 as i32) as f64 as f64
+                && !player2_rectangle.is_bot
+            {
+                self.speed_pos_y = rand::thread_rng().gen_range(0.0..10.0);
+            }
+            if self.position_y >= (y_bottom_rectangle - 40 as i32) as f64
+                && self.position_y <= (y_bottom_rectangle + 40 as i32) as f64
+                && !player2_rectangle.is_bot
+            {
+                self.speed_pos_y = rand::thread_rng().gen_range(0.0..10.0);
+            }
             self.is_increase_x = false;
         }
     }
@@ -124,7 +135,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("Impossivel", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .window("Pong", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build()
         .expect("failed to open");
@@ -146,7 +157,7 @@ fn main() {
         Color::RGB(255, 255, 255),
         SCREEN_WIDTH as f64 / 2.0 as f64,
         10.0,
-        1.0, //rand::thread_rng().gen_range(1.0..15.0)
+        0.0,
     );
     while game_is_running {
         for event in event_pump.poll_iter() {
@@ -177,7 +188,7 @@ fn main() {
 fn handle_keyboard(
     keyboard_state: keyboard::KeyboardState,
     first_rectangle: &mut Rectangle2d,
-    _second_rectangle: &mut Rectangle2d,
+    second_rectangle: &mut Rectangle2d,
 ) {
     if keyboard_state.is_scancode_pressed(keyboard::Scancode::W) {
         if first_rectangle.position_y > 0 {
@@ -187,6 +198,16 @@ fn handle_keyboard(
     if keyboard_state.is_scancode_pressed(keyboard::Scancode::S) {
         if first_rectangle.position_y != SCREEN_HEIGHT as i32 - first_rectangle.height as i32 {
             first_rectangle.position_y += SPEED_RECTANGLES;
+        }
+    }
+    if keyboard_state.is_scancode_pressed(keyboard::Scancode::Up) && !second_rectangle.is_bot {
+        if second_rectangle.position_y > 0 {
+            second_rectangle.position_y -= SPEED_RECTANGLES;
+        }
+    }
+    if keyboard_state.is_scancode_pressed(keyboard::Scancode::Down) && !second_rectangle.is_bot {
+        if second_rectangle.position_y != SCREEN_HEIGHT as i32 - second_rectangle.height as i32 {
+            second_rectangle.position_y += SPEED_RECTANGLES;
         }
     }
 }
@@ -202,13 +223,6 @@ fn update(
 
     canvas.set_draw_color(point.color);
     let _ = canvas.draw_point(Point::new(point.position_x as i32, point.position_y as i32));
-    // canvas.set_draw_color(Color::RGB(255, 0, 0));
-    // let _ = canvas.draw_point(Point::new(
-    //     15 as i32,
-    //     player1_rectangle.position_y + (player1_rectangle.height / 2 as u32) as i32,
-    // ));
-    // canvas.set_draw_color(Color::RGB(255, 0, 0));
-    // let _ = canvas.draw_point(Point::new(15 as i32, player1_rectangle.position_y + 20));
 
     canvas.set_draw_color(player1_rectangle.color);
     let _ = canvas.fill_rect(Rect::new(
@@ -240,7 +254,9 @@ fn update_position_point(
 ) {
     point.movement();
     point.check_colision(player1_rectangle, player2_rectangle);
-    if point.position_x == 0.0 {
+    if point.position_x == 0.0 || point.position_x > SCREEN_WIDTH as f64 {
+        point.position_y = SCREEN_HEIGHT as f64 / 2.0 as f64;
+        point.speed_pos_y = 0.0;
         point.position_x = point.initial_position
     }
 }
